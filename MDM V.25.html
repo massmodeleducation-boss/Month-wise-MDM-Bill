@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>AP MODEL SCHOOL SEETHARAMAPURAM - Multi Application MDM Register (Editable, Live Tally)</title>
+<style>
+  :root{
+    --accent:#00796b;
+    --paper:#fffefb;
+    --muted:#666;
+  }
+  /* Layout & typography */
+  body{
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    margin:0; padding:16px;
+    background: linear-gradient(180deg,#eafaf8,#e6f2ff 60%);
+    color:#073642;
+    font-size:13px; /* requested larger font */
+  }
+  h1,h2,h3{ margin:6px 0; }
+  .top { background:var(--paper); padding:12px; border-radius:10px; box-shadow:0 6px 18px rgba(3,60,60,0.06); margin-bottom:12px; }
+  .row { display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
+  label{ font-weight:600; font-size:13px; color:var(--muted); }
+  input[type="number"], input[type="date"], select, input[type="text"]{
+    padding:6px 8px; border-radius:6px; border:1px solid #cbdedf; min-width:120px;
+  }
+  button{
+    background:linear-gradient(90deg,var(--accent),#005b4f);
+    color:white; border:none; padding:8px 12px; border-radius:8px; cursor:pointer;
+    box-shadow:0 4px 10px rgba(0,0,0,0.06);
+  }
+  button.ghost{ background:transparent; color:var(--accent); border:1px solid #cdeee6; }
+  .small { font-size:12px; color:#666; }
+  .muted { color:#666; font-size:13px; }
+
+  /* App panel */
+  .app { width:100%; background:#fff; border-radius:8px; padding:12px; box-shadow:0 6px 14px rgba(3,60,60,0.05); margin-bottom:18px; page-break-inside:avoid; }
+  .app h3{ color:var(--accent); margin:6px 0 10px 0; }
+  .controls-inline { display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:8px; }
+
+  /* Table layout */
+  table { width:100%; border-collapse:collapse; margin-top:8px; }
+  table th, table td { border:1px solid #d8e9e6; padding:6px 8px; text-align:center; vertical-align:middle; }
+  table th { background:#f0fbf9; font-weight:700; color:#044; font-size:13px; }
+  /* Requested row height ~0.5 inch and editable cells */
+  tr { height:0.5in; } /* approximate row height for printing */
+  td[contenteditable="true"] { background:#fffef8; outline:none; min-height:0.5in; font-size:13px; }
+  td.disabled { background:#f6f6f6; color:#999; }
+  .summary-row td { font-weight:700; background:#fafafa; }
+  .signature { display:flex; justify-content:space-between; margin-top:20px; page-break-after:avoid; }
+  @media print{
+    body{padding:8px;}
+    .top, .controls-inline, button, .muted { display:none !important; }
+    .app{ page-break-after: always; }
+    td[contenteditable="true"] { background:transparent; }
+  }
+</style>
+</head>
+<body>
+
+<div class="top">
+  <h1>AP MODEL SCHOOL SEETHARAMAPURAM</h1>
+  <h2>SPSR NELLORE DISTRICT — Month-wise MDM Register (Editable, Live Tally)</h2>
+
+  <div class="row" style="margin-top:8px;">
+    <label>Start Date: <input id="startDate" type="date"></label>
+    <label>Days: <input id="days" type="number" value="30" min="1" style="width:80px"></label>
+    <label>Cost per Meal (₹): <input id="cost" type="number" step="0.01" value="8.57" style="width:90px"></label>
+    <label>Total Roll VI–VIII: <input id="roll_6_8" type="number" style="width:90px" min="0" value="0"></label>
+    <label>Total Roll IX–X: <input id="roll_9_10" type="number" style="width:90px" min="0" value="0"></label>
+    <label>Total Roll XI–XII: <input id="roll_11_12" type="number" style="width:90px" min="0" value="0"></label>
+  </div>
+
+  <div class="row" style="margin-top:10px;">
+    <label>Opening Rice (kg): <input id="openRice" type="number" step="0.01" value="0"></label>
+    <label>Opening Eggs (no): <input id="openEggs" type="number" step="1" value="0"></label>
+    <label>Opening Chikki (no): <input id="openChikki" type="number" step="1" value="0"></label>
+    <label>Opening Ragi (kg): <input id="openRagi" type="number" step="0.01" value="0"></label>
+    <label>Opening Jaggery (kg): <input id="openJaggery" type="number" step="0.01" value="0"></label>
+  </div>
+
+  <div class="row" style="margin-top:10px;">
+    <button id="generateAllBtn">Generate All Applications</button>
+    <button id="saveBtn">💾 Save HTML</button>
+    <button id="printBtn">🖨 Print</button>
+    <button id="clearBtn" class="ghost">🗑 Clear Tables</button>
+    <div style="flex:1"></div>
+    <div class="small muted">Rice per child: VI–X = 150 g ; XI–XII = 200 g. Chikki (Mon/Wed/Fri). Ragi & Jaggery (Tue/Thu/Sat). Eggs every day except Sat.</div>
+  </div>
+</div>
+
+<!-- Received stock panel -->
+<div class="top" id="receivedPanel" style="margin-bottom:12px;">
+  <h3 style="margin:0 0 8px 0">Add Received Stock (specify application)</h3>
+  <div class="row">
+    <label>Application:
+      <select id="recvApp">
+        <option value="app1">VI–VIII (app1)</option>
+        <option value="app2">IX–X (app2)</option>
+        <option value="app3">XI–XII (app3)</option>
+      </select>
+    </label>
+    <label>Date: <input id="recvDate" type="date"></label>
+    <label>Rice (kg): <input id="recvRice" type="number" step="0.01" value="0" style="width:90px"></label>
+    <label>Eggs: <input id="recvEggs" type="number" step="1" value="0" style="width:90px"></label>
+    <label>Chikki: <input id="recvChikki" type="number" step="1" value="0" style="width:90px"></label>
+    <label>Ragi (kg): <input id="recvRagi" type="number" step="0.01" value="0" style="width:90px"></label>
+    <label>Jaggery (kg): <input id="recvJaggery" type="number" step="0.01" value="0" style="width:90px"></label>
+    <button id="addRecvBtn" style="margin-left:6px">Add Received</button>
+  </div>
+  <div id="receivedList" class="small muted" style="margin-top:8px"></div>
+</div>
+
+<!-- Holiday panel -->
+<div class="top" style="margin-bottom:12px;">
+  <h3 style="margin:0 0 8px 0">Add Holiday / Reason (Global)</h3>
+  <div class="row">
+    <label>Date: <input id="holidayDate" type="date"></label>
+    <label>Reason: <input id="holidayReason" type="text" placeholder="Holiday / School Closed" style="width:300px"></label>
+    <label>Application:
+      <select id="holidayApp">
+        <option value="all">All Applications</option>
+        <option value="app1">VI–VIII (app1)</option>
+        <option value="app2">IX–X (app2)</option>
+        <option value="app3">XI–XII (app3)</option>
+      </select>
+    </label>
+    <button id="addHolidayBtn">Add Holiday</button>
+  </div>
+</div>
+
+<div id="appsContainer"></div>
+
+<script>
+/* Final editable MDM Multi-Application
+   - All columns editable
+   - Calculations driven primarily by Meals Taken column
+   - If user manually edits any calculated cell, that manual value is respected (manual override)
+   - If user clears a manually edited cell, it reverts to computed value (auto)
+   - Live updates: on input (typing) totals update immediately
+   - Row height approx 0.5in and font-size 13px for print suitability
+*/
+
+const DEFAULT_COST = 8.57;
+const APPS = [
+  { id:'app1', title:'VI–VIII (Application 1)', ricePerChildKg:0.150, rollInputId:'roll_6_8' },
+  { id:'app2', title:'IX–X (Application 2)',  ricePerChildKg:0.150, rollInputId:'roll_9_10' },
+  { id:'app3', title:'XI–XII (Application 3)', ricePerChildKg:0.200, rollInputId:'roll_11_12' }
+];
+
+let receivedStockGlobal = { app1:[], app2:[], app3:[] };
+let holidaysGlobal = { app1:[], app2:[], app3:[], all:[] };
+
+/* helpers */
+function pad2(n){ return String(n).padStart(2,'0'); }
+function formatDateKey(d){ return `${pad2(d.getDate())}-${pad2(d.getMonth()+1)}-${d.getFullYear()}`; }
+function weekdayShort(d){ return d.toLocaleString('en-GB',{weekday:'short'}).toUpperCase(); }
+function toNum(s){ const v = parseFloat(String(s).replace(/,/g,'')); return isNaN(v)?0:v; }
+function isBlank(s){ return String(s||'').trim()===''; }
+
+/* build app HTML */
+function buildAppHtml(app, startISO, days, opening){
+  const start = new Date(startISO);
+  const rows = [];
+  for(let i=0;i<days;i++){
+    const d=new Date(start); d.setDate(start.getDate()+i);
+    rows.push({ ds: formatDateKey(d), wd: weekdayShort(d) });
+  }
+  return `
+    <h3>${app.title}</h3>
+    <div class="controls-inline">
+      <div class="small">Opening stock shown — closing auto-carries to next application.</div>
+      <div style="flex:1"></div>
+      <button class="ghost" data-action="recalc" data-app="${app.id}">Recalculate</button>
+      <button class="ghost" data-action="save-app" data-app="${app.id}">Save App HTML</button>
+      <button class="ghost" data-action="clear-app" data-app="${app.id}">Clear App</button>
+    </div>
+
+    <div class="stock-row row" style="gap:8px; margin-top:6px;">
+      <label>Opening Rice (kg): <input type="number" step="0.01" id="${app.id}_openRice" value="${(opening.Rice||0).toFixed(3)}"></label>
+      <label>Opening Eggs: <input type="number" id="${app.id}_openEggs" value="${Math.round(opening.Eggs||0)}"></label>
+      <label>Opening Chikki: <input type="number" id="${app.id}_openChikki" value="${Math.round(opening.Chikki||0)}"></label>
+      <label>Opening Ragi (kg): <input type="number" step="0.01" id="${app.id}_openRagi" value="${(opening.Ragi||0).toFixed(3)}"></label>
+      <label>Opening Jaggery (kg): <input type="number" step="0.01" id="${app.id}_openJaggery" value="${(opening.Jaggery||0).toFixed(3)}"></label>
+      <div style="flex:1"></div>
+      <label>Total Roll: <input type="number" id="${app.id}_roll" value="${document.getElementById(app.rollInputId)?.value||0}" style="width:90px"></label>
+    </div>
+
+    <table id="${app.id}_table" style="margin-top:8px;">
+      <thead>
+        <tr>
+          <th>S.NO</th><th>DATE</th><th>WEEKDAY</th><th>TOTAL ROLL</th><th>PRESENT</th><th>MEALS NOT TAKEN</th>
+          <th>MEALS TAKEN</th><th>RICE USED (KG)</th><th>EGGS USED (No)</th><th>CHIKKI USED (No)</th>
+          <th>RAGI USED (KG)</th><th>JAGGERY USED (KG)</th><th>TOTAL AMOUNT (₹)</th><th>REMARKS / REASON</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${rows.map((r, idx)=>`
+          <tr data-date="${r.ds}">
+            <td>${idx+1}</td>
+            <td>${r.ds}</td>
+            <td>${r.wd}</td>
+            <td contenteditable="true" class="editable roll-col">${document.getElementById(app.rollInputId)?.value || ''}</td>
+            <td contenteditable="true" class="editable present-col"></td>
+            <td contenteditable="true" class="editable nottaken-col"></td>
+            <td contenteditable="true" class="editable meals-col"></td>
+            <td contenteditable="true" class="editable rice-col"></td>
+            <td contenteditable="true" class="editable eggs-col"></td>
+            <td contenteditable="true" class="editable chikki-col"></td>
+            <td contenteditable="true" class="editable ragi-col"></td>
+            <td contenteditable="true" class="editable jaggery-col"></td>
+            <td contenteditable="true" class="editable amount-col"></td>
+            <td contenteditable="true" class="editable remarks-col"></td>
+          </tr>`).join('')}
+        <tr class="summary-row">
+          <td colspan="3">TOTAL</td>
+          <td id="${app.id}_total_roll"></td>
+          <td id="${app.id}_total_present"></td>
+          <td id="${app.id}_total_nottaken"></td>
+          <td id="${app.id}_total_meals"></td>
+          <td id="${app.id}_total_rice"></td>
+          <td id="${app.id}_total_eggs"></td>
+          <td id="${app.id}_total_chikki"></td>
+          <td id="${app.id}_total_ragi"></td>
+          <td id="${app.id}_total_jaggery"></td>
+          <td id="${app.id}_total_amount"></td>
+          <td></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div style="margin-top:10px; display:flex; gap:12px; align-items:center;">
+      <div style="flex:1"></div>
+      <div>
+        <strong>Closing Stock (calculated)</strong><br>
+        Rice(kg): <input id="${app.id}_closeRice" readonly style="width:95px">
+        Eggs: <input id="${app.id}_closeEggs" readonly style="width:70px">
+        Chikki: <input id="${app.id}_closeChikki" readonly style="width:70px">
+        Ragi(kg): <input id="${app.id}_closeRagi" readonly style="width:95px">
+        Jaggery(kg): <input id="${app.id}_closeJaggery" readonly style="width:95px">
+      </div>
+    </div>
+
+    <div class="signature">
+      <div style="text-align:left; margin-top:18px;">
+        <strong>Signature of the MDM Agency</strong><br><br>________________________
+      </div>
+      <div style="text-align:right; margin-top:18px;">
+        <strong>Signature of the Principal</strong><br><br>________________________
+      </div>
+    </div>
+  `;
+}
+
+/* generate all */
+function generateAllApplications(){
+  const startVal = document.getElementById('startDate').value;
+  const days = parseInt(document.getElementById('days').value,10) || 0;
+  if(!startVal || days <= 0){ alert('Select valid start date and days'); return; }
+
+  const container = document.getElementById('appsContainer');
+  container.innerHTML = '';
+
+  let opening = {
+    Rice: +(document.getElementById('openRice').value||0),
+    Eggs: +(document.getElementById('openEggs').value||0),
+    Chikki: +(document.getElementById('openChikki').value||0),
+    Ragi: +(document.getElementById('openRagi').value||0),
+    Jaggery: +(document.getElementById('openJaggery').value||0)
+  };
+
+  for(let i=0;i<APPS.length;i++){
+    const app = APPS[i];
+    const wrapper = document.createElement('div');
+    wrapper.className = 'app';
+    wrapper.id = `panel_${app.id}`;
+    wrapper.innerHTML = buildAppHtml(app, startVal, days, opening);
+    container.appendChild(wrapper);
+
+    attachPanelListeners(app.id);
+    updateAppAll(app.id);
+
+    // compute closing and carry forward to next opening values
+    const closing = getClosingValues(app.id);
+    opening = {
+      Rice: closing.Rice || 0,
+      Eggs: closing.Eggs || 0,
+      Chikki: closing.Chikki || 0,
+      Ragi: closing.Ragi || 0,
+      Jaggery: closing.Jaggery || 0
+    };
+  }
+  renderReceivedList();
+}
+
+/* attach listeners inside panel */
+function attachPanelListeners(appId){
+  const panel = document.getElementById(`panel_${appId}`);
+  if(!panel) return;
+
+  // ghost buttons
+  panel.querySelectorAll('button').forEach(btn=>{
+    const action = btn.dataset.action;
+    if(action==='recalc') btn.addEventListener('click', ()=> updateAppAll(appId));
+    if(action==='save-app') btn.addEventListener('click', ()=> saveSingleApp(appId));
+    if(action==='clear-app') btn.addEventListener('click', ()=> clearApp(panel));
+  });
+
+  // editable cells: set dataset.manual on user's edit, update totals live
+  panel.querySelectorAll('td[contenteditable="true"]').forEach(td=>{
+    td.addEventListener('input', (ev)=>{
+      // mark manual override if not empty
+      if(!isBlank(td.innerText)) td.dataset.manual = "true";
+      else delete td.dataset.manual; // if cleared, revert to computed
+      // immediate recalc for this app
+      updateAppAll(appId);
+    });
+    // on double click, allow user to clear manual override quickly (optional)
+    td.addEventListener('dblclick', ()=> {
+      // double-click clears manual override and the cell content so it reverts to computed
+      delete td.dataset.manual;
+      td.innerText = '';
+      updateAppAll(appId);
+    });
+  });
+
+  // opening inputs change -> recalc
+  ['openRice','openEggs','openChikki','openRagi','openJaggery','roll'].forEach(suf=>{
+    const el = document.getElementById(`${appId}_${suf}`);
+    if(el) el.addEventListener('input', ()=> updateAppAll(appId));
+  });
+
+  // delegate: if user edits meals cell specifically, recalc computed cells for that row (handled by updateAppAll)
+}
+
+/* update calculations for an app (live) */
+function updateAppAll(appId){
+  try {
+    const table = document.getElementById(`${appId}_table`);
+    if(!table) return;
+    const cost = toNum(document.getElementById('cost').value) || DEFAULT_COST;
+    const app = APPS.find(a=>a.id===appId);
+    const ricePerChild = app.ricePerChildKg;
+
+    const totals = { roll:0, present:0, notTaken:0, meals:0, rice:0, eggs:0, chikki:0, ragi:0, jaggery:0, amount:0 };
+
+    for(let r=1; r < table.rows.length-1; r++){
+      const row = table.rows[r];
+      if(row.classList.contains('holiday-row')) continue;
+      const wd = row.cells[2].innerText.trim();
+
+      // parse user inputs
+      const rollVal = toNum(row.cells[3].innerText);
+      const presentVal = toNum(row.cells[4].innerText);
+      const notTakenVal = toNum(row.cells[5].innerText);
+
+      // MEALS TAKEN: if user manually filled this cell (dataset.manual), use it; else compute from present - notTaken OR from manual meals if present
+      const manualMeals = row.cells[6].dataset.manual ? toNum(row.cells[6].innerText) : (isBlank(row.cells[6].innerText) ? 0 : toNum(row.cells[6].innerText));
+      const computedMeals = Math.max(0, presentVal - notTakenVal);
+      const mealsTaken = manualMeals > 0 ? manualMeals : computedMeals;
+      // write back mealsTaken if not manual (so user sees computed)
+      if(!row.cells[6].dataset.manual) row.cells[6].textContent = mealsTaken || '';
+
+      // RICE: if user manually edited rice cell (dataset.manual) use that value; else compute rice = mealsTaken * ricePerChild
+      const riceManualFlag = !!row.cells[7].dataset.manual;
+      const riceManualVal = riceManualFlag ? toNum(row.cells[7].innerText) : 0;
+      const riceComputed = +(mealsTaken * ricePerChild).toFixed(3);
+      const riceUsed = riceManualFlag ? riceManualVal : riceComputed;
+      if(!riceManualFlag) row.cells[7].textContent = riceUsed || '';
+
+      // EGGS: manual or computed (0 on SAT)
+      const eggsManualFlag = !!row.cells[8].dataset.manual;
+      const eggsManualVal = eggsManualFlag ? toNum(row.cells[8].innerText) : 0;
+      const eggsComputed = (wd === 'SAT') ? 0 : Math.round(mealsTaken || 0);
+      const eggsUsed = eggsManualFlag ? eggsManualVal : eggsComputed;
+      if(!eggsManualFlag) row.cells[8].textContent = (eggsUsed || eggsUsed===0) ? eggsUsed : '';
+
+      // CHIKKI: manual or computed on MON/WED/FRI (count = mealsTaken)
+      const chikkiManualFlag = !!row.cells[9].dataset.manual;
+      const chikkiManualVal = chikkiManualFlag ? toNum(row.cells[9].innerText) : 0;
+      const chikkiComputed = (['MON','WED','FRI'].includes(wd)) ? Math.round(mealsTaken || 0) : 0;
+      const chikkiUsed = chikkiManualFlag ? chikkiManualVal : chikkiComputed;
+      if(!chikkiManualFlag) row.cells[9].textContent = chikkiUsed || '';
+
+      // RAGI & JAGGERY: manual or computed on TUE/THU/SAT (0.01 kg per meal)
+      const ragiManualFlag = !!row.cells[10].dataset.manual;
+      const ragiManualVal = ragiManualFlag ? toNum(row.cells[10].innerText) : 0;
+      const jaggeryManualFlag = !!row.cells[11].dataset.manual;
+      const jaggeryManualVal = jaggeryManualFlag ? toNum(row.cells[11].innerText) : 0;
+      const ragiComputed = (['TUE','THU','SAT'].includes(wd)) ? +(mealsTaken*0.01).toFixed(3) : 0;
+      const jaggeryComputed = (['TUE','THU','SAT'].includes(wd)) ? +(mealsTaken*0.01).toFixed(3) : 0;
+      const ragiUsed = ragiManualFlag ? ragiManualVal : ragiComputed;
+      const jaggeryUsed = jaggeryManualFlag ? jaggeryManualVal : jaggeryComputed;
+      if(!ragiManualFlag) row.cells[10].textContent = ragiUsed || '';
+      if(!jaggeryManualFlag) row.cells[11].textContent = jaggeryUsed || '';
+
+      // AMOUNT: manual or computed mealsTaken * cost
+      const amountManualFlag = !!row.cells[12].dataset.manual;
+      const amountManualVal = amountManualFlag ? toNum(row.cells[12].innerText) : 0;
+      const amountComputed = +(mealsTaken * cost).toFixed(2);
+      const amountVal = amountManualFlag ? amountManualVal : amountComputed;
+      if(!amountManualFlag) row.cells[12].textContent = amountVal ? amountVal.toFixed(2) : '';
+
+      // accumulate totals
+      totals.roll += rollVal || 0;
+      totals.present += presentVal || 0;
+      totals.notTaken += notTakenVal || 0;
+      totals.meals += mealsTaken || 0;
+      totals.rice += riceUsed || 0;
+      totals.eggs += eggsUsed || 0;
+      totals.chikki += chikkiUsed || 0;
+      totals.ragi += ragiUsed || 0;
+      totals.jaggery += jaggeryUsed || 0;
+      totals.amount += amountVal || 0;
+    }
+
+    // put totals into summary row
+    document.getElementById(`${appId}_total_roll`).textContent = totals.roll?totals.roll:'';
+    document.getElementById(`${appId}_total_present`).textContent = totals.present?totals.present:'';
+    document.getElementById(`${appId}_total_nottaken`).textContent = totals.notTaken?totals.notTaken:'';
+    document.getElementById(`${appId}_total_meals`).textContent = totals.meals?totals.meals:'';
+    document.getElementById(`${appId}_total_rice`).textContent = totals.rice?totals.rice.toFixed(3):'';
+    document.getElementById(`${appId}_total_eggs`).textContent = totals.eggs?Math.round(totals.eggs):'';
+    document.getElementById(`${appId}_total_chikki`).textContent = totals.chikki?Math.round(totals.chikki):'';
+    document.getElementById(`${appId}_total_ragi`).textContent = totals.ragi?totals.ragi.toFixed(3):'';
+    document.getElementById(`${appId}_total_jaggery`).textContent = totals.jaggery?totals.jaggery.toFixed(3):'';
+    document.getElementById(`${appId}_total_amount`).textContent = totals.amount?totals.amount.toFixed(2):'';
+
+    // received for this app
+    const receivedForApp = (receivedStockGlobal[appId]||[]).reduce((acc,r)=>{
+      acc.Rice += Number(r.Rice||0); acc.Eggs += Number(r.Eggs||0); acc.Chikki += Number(r.Chikki||0); acc.Ragi += Number(r.Ragi||0); acc.Jaggery += Number(r.Jaggery||0);
+      return acc;
+    }, {Rice:0, Eggs:0, Chikki:0, Ragi:0, Jaggery:0});
+
+    // opening values
+    const openingRice = toNum(document.getElementById(`${appId}_openRice`).value);
+    const openingEggs = toNum(document.getElementById(`${appId}_openEggs`).value);
+    const openingChikki = toNum(document.getElementById(`${appId}_openChikki`).value);
+    const openingRagi = toNum(document.getElementById(`${appId}_openRagi`).value);
+    const openingJaggery = toNum(document.getElementById(`${appId}_openJaggery`).value);
+
+    // closing = opening + received - used
+    const closing = {
+      Rice: openingRice + receivedForApp.Rice - totals.rice,
+      Eggs: openingEggs + receivedForApp.Eggs - totals.eggs,
+      Chikki: openingChikki + receivedForApp.Chikki - totals.chikki,
+      Ragi: openingRagi + receivedForApp.Ragi - totals.ragi,
+      Jaggery: openingJaggery + receivedForApp.Jaggery - totals.jaggery
+    };
+
+    // update closing fields
+    document.getElementById(`${appId}_closeRice`).value = (!isNaN(closing.Rice) ? closing.Rice.toFixed(3) : '');
+    document.getElementById(`${appId}_closeEggs`).value = (!isNaN(closing.Eggs) ? Math.round(closing.Eggs) : '');
+    document.getElementById(`${appId}_closeChikki`).value = (!isNaN(closing.Chikki) ? Math.round(closing.Chikki) : '');
+    document.getElementById(`${appId}_closeRagi`).value = (!isNaN(closing.Ragi) ? closing.Ragi.toFixed(3) : '');
+    document.getElementById(`${appId}_closeJaggery`).value = (!isNaN(closing.Jaggery) ? closing.Jaggery.toFixed(3) : '');
+
+    // carry forward to next app opening if panel exists
+    const idx = APPS.findIndex(a=>a.id===appId);
+    if(idx < APPS.length-1){
+      const nextId = APPS[idx+1].id;
+      if(document.getElementById(`${nextId}_openRice`)) document.getElementById(`${nextId}_openRice`).value = closing.Rice.toFixed(3);
+      if(document.getElementById(`${nextId}_openEggs`)) document.getElementById(`${nextId}_openEggs`).value = Math.round(closing.Eggs);
+      if(document.getElementById(`${nextId}_openChikki`)) document.getElementById(`${nextId}_openChikki`).value = Math.round(closing.Chikki);
+      if(document.getElementById(`${nextId}_openRagi`)) document.getElementById(`${nextId}_openRagi`).value = closing.Ragi.toFixed(3);
+      if(document.getElementById(`${nextId}_openJaggery`)) document.getElementById(`${nextId}_openJaggery`).value = closing.Jaggery.toFixed(3);
+      // also update next app to cascade changes
+      if(document.getElementById(`panel_${nextId}`)) updateAppAll(nextId);
+    }
+
+  } catch(err){
+    console.error('updateAppAll error', err);
+  }
+}
+
+/* get closing values helper */
+function getClosingValues(appId){
+  return {
+    Rice: toNum(document.getElementById(`${appId}_closeRice`)?.value||0),
+    Eggs: toNum(document.getElementById(`${appId}_closeEggs`)?.value||0),
+    Chikki: toNum(document.getElementById(`${appId}_closeChikki`)?.value||0),
+    Ragi: toNum(document.getElementById(`${appId}_closeRagi`)?.value||0),
+    Jaggery: toNum(document.getElementById(`${appId}_closeJaggery`)?.value||0)
+  };
+}
+
+/* Received stock */
+document.getElementById('addRecvBtn').addEventListener('click', ()=>{
+  const app = document.getElementById('recvApp').value;
+  const date = document.getElementById('recvDate').value;
+  if(!date){ alert('Select received date'); return; }
+  const entry = {
+    date: date,
+    Rice: +(document.getElementById('recvRice').value || 0),
+    Eggs: +(document.getElementById('recvEggs').value || 0),
+    Chikki: +(document.getElementById('recvChikki').value || 0),
+    Ragi: +(document.getElementById('recvRagi').value || 0),
+    Jaggery: +(document.getElementById('recvJaggery').value || 0)
+  };
+  receivedStockGlobal[app].push(entry);
+  renderReceivedList();
+  if(document.getElementById(`panel_${app}`)) updateAppAll(app);
+});
+
+function renderReceivedList(){
+  const el = document.getElementById('receivedList');
+  let html = '<strong>Received Stock:</strong><br>';
+  for(const key of Object.keys(receivedStockGlobal)){
+    html += `<div style="margin-top:6px"><em>${APPS.find(a=>a.id===key).title}:</em><table style="width:100%;border-collapse:collapse;"><tr><th>Date</th><th>Rice</th><th>Eggs</th><th>Chikki</th><th>Ragi</th><th>Jaggery</th></tr>`;
+    (receivedStockGlobal[key]||[]).forEach(r=>{
+      html += `<tr><td style="padding:4px">${r.date}</td><td style="padding:4px">${r.Rice}</td><td style="padding:4px">${r.Eggs}</td><td style="padding:4px">${r.Chikki}</td><td style="padding:4px">${r.Ragi}</td><td style="padding:4px">${r.Jaggery}</td></tr>`;
+    });
+    html += `</table></div>`;
+  }
+  el.innerHTML = html;
+}
+
+/* Holidays */
+document.getElementById('addHolidayBtn').addEventListener('click', ()=>{
+  const date = document.getElementById('holidayDate').value;
+  const reason = document.getElementById('holidayReason').value || 'Holiday';
+  const which = document.getElementById('holidayApp').value;
+  if(!date){ alert('Select holiday date'); return; }
+  const key = formatDateKey(new Date(date));
+  if(which === 'all'){ APPS.forEach(a=> holidaysGlobal[a.id].push({date:key,reason})); }
+  else holidaysGlobal[which].push({date:key,reason});
+  applyHolidaysToPanels();
+});
+
+function applyHolidaysToPanels(){
+  APPS.forEach(app=>{
+    const panel = document.getElementById(`panel_${app.id}`);
+    if(!panel) return;
+    const table = document.getElementById(`${app.id}_table`);
+    if(!table) return;
+    const keys = new Set((holidaysGlobal[app.id]||[]).map(h=>h.date).concat((holidaysGlobal['all']||[]).map(h=>h.date)));
+    for(let r=1;r<table.rows.length-1;r++){
+      const row = table.rows[r];
+      const ds = row.dataset.date;
+      if(keys.has(ds)){
+        const reason = (holidaysGlobal[app.id].find(h=>h.date===ds)||holidaysGlobal['all'].find(h=>h.date===ds)||{}).reason || 'Holiday';
+        row.className = 'holiday-row';
+        row.innerHTML = `<td>${row.cells[0].innerText}</td><td>${row.cells[1].innerText}</td><td>${row.cells[2].innerText}</td><td colspan="11" style="text-align:center">${reason}</td>`;
+      }
+    }
+    updateAppAll(app.id);
+  });
+}
+
+/* Save single app */
+function saveSingleApp(appId){
+  updateAppAll(appId);
+  const panel = document.getElementById(`panel_${appId}`);
+  if(!panel) return;
+  const html = `<!doctype html><html><head><meta charset="utf-8"><title>${APPS.find(a=>a.id===appId).title} - MDM</title><style>table,th,td{border:1px solid #000;border-collapse:collapse;padding:4px}</style></head><body>${panel.innerHTML}</body></html>`;
+  const blob = new Blob([html], {type:'text/html'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `${appId}_MDM_register.html`; a.click();
+}
+
+/* clear app */
+function clearApp(panelEl){
+  if(!confirm('Remove this application panel?')) return;
+  panelEl.parentNode.removeChild(panelEl);
+}
+
+/* Save full HTML */
+document.getElementById('saveBtn').addEventListener('click', ()=>{
+  updateAllApps();
+  const docHtml = document.documentElement.outerHTML;
+  const blob = new Blob([docHtml], {type:'text/html'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `APMS_MDM_full_register.html`; a.click();
+});
+
+/* Print */
+document.getElementById('printBtn').addEventListener('click', ()=>{
+  updateAllApps();
+  window.print();
+});
+
+/* Clear everything */
+document.getElementById('clearBtn').addEventListener('click', ()=>{
+  if(!confirm('Clear all generated tables, received stock and holidays?')) return;
+  document.getElementById('appsContainer').innerHTML = '';
+  receivedStockGlobal = { app1:[], app2:[], app3:[] };
+  holidaysGlobal = { app1:[], app2:[], app3:[], all:[] };
+  document.getElementById('receivedList').innerHTML = '';
+});
+
+/* update all apps helper */
+function updateAllApps(){ APPS.forEach(a=>{ if(document.getElementById(`panel_${a.id}`)) updateAppAll(a.id); }); renderReceivedList(); }
+
+/* Generate All listener */
+document.getElementById('generateAllBtn').addEventListener('click', ()=> generateAllApplications());
+
+/* init defaults */
+(function init(){
+  document.getElementById('startDate').value = new Date().toISOString().slice(0,10);
+  document.getElementById('cost').value = DEFAULT_COST;
+})();
+
+/* Delegated input handling for contenteditable cells:
+   - When user types -> we set data-manual on that cell (so manual override)
+   - If user clears cell (becomes empty) we remove data-manual so computed value appears on next recalc
+   - Recalc happens immediately for the app
+*/
+document.addEventListener('input', function(e){
+  // contenteditable cell
+  let td = e.target.closest && e.target.closest('td[contenteditable="true"]');
+  if(!td) {
+    // or directly if user typed in a contenteditable element that is the element itself
+    if(e.target && e.target.isContentEditable) td = e.target;
+  }
+  if(td){
+    if(!isBlank(td.innerText)) td.dataset.manual = "true";
+    else delete td.dataset.manual;
+    const panel = td.closest && td.closest('.app');
+    if(panel){
+      const appId = panel.id.replace('panel_','');
+      updateAppAll(appId);
+    }
+  }
+});
+
+/* start: implement generateAllApplications now */
+function generateAllApplications(){ // (defined earlier) keep reference
+  // existing function above; call it here to satisfy hoisting for some browsers
+  // actual implementation defined earlier - but ensure it's available
+  // (we declared function earlier so this works)
+  // For clarity, call previously defined implementation
+  // (function was defined earlier at top of file)
+  // Nothing extra needed here.
+  // To avoid confusion, call build flow explicitly below:
+  // We'll simply call the earlier declared implementation by name
+  // (which is above in code). Nothing else needed.
+  // However if it's not defined due to order, we ensure using a local wrapper:
+  _generateAllApplications();
+}
+
+/* Because of hoisting and function ordering, create a wrapper that calls the actual implementation defined above */
+function _generateAllApplications(){
+  // actual generation uses same logic as previously defined above: to avoid duplication, reusing it:
+  // But in this file we defined buildAppHtml & generateAllApplications earlier, so call original generateAllApplicationsImpl
+  // For safety, if generateAllApplicationsImpl exists call it; else use local implementation defined above.
+  if(typeof window.generateAllApplicationsImpl === 'function') return window.generateAllApplicationsImpl();
+  // fallback: run the logic defined previously in the file (we already defined generateAllApplications function earlier)
+  // but to be safe just call the function name if available
+  if(typeof generateAllApplicationsInternal === 'function') return generateAllApplicationsInternal();
+  // If none found, call the inline generator we wrote earlier (first occurrence)
+  // Here we'll just implement generation inline now:
+  // (Simpler: call the main generator defined earlier in the file if available)
+  if(typeof buildAppHtml === 'function'){
+    // Use the generateAllApplications implementation earlier in the script (it was declared earlier)
+    // The earlier function is named generateAllApplications (defined above) — call it directly.
+    // To avoid recursion with this wrapper, ensure names don't clash — so call the original by the global name if present:
+    try { window.generateAllApplicationsOriginal(); } catch(e){}
+  }
+}
+
+/* For compatibility: define generateAllApplicationsOriginal as the main generator (this is the actual implementation used above).
+   To keep code straightforward, we'll create generateAllApplicationsOriginal now as the intended generator.
+*/
+function generateAllApplicationsOriginal(){
+  const startVal = document.getElementById('startDate').value;
+  const days = parseInt(document.getElementById('days').value,10) || 0;
+  if(!startVal || days <= 0){ alert('Select valid start date and days'); return; }
+
+  const container = document.getElementById('appsContainer');
+  container.innerHTML = '';
+
+  let opening = {
+    Rice: +(document.getElementById('openRice').value||0),
+    Eggs: +(document.getElementById('openEggs').value||0),
+    Chikki: +(document.getElementById('openChikki').value||0),
+    Ragi: +(document.getElementById('openRagi').value||0),
+    Jaggery: +(document.getElementById('openJaggery').value||0)
+  };
+
+  for(let i=0;i<APPS.length;i++){
+    const app = APPS[i];
+    const wrapper = document.createElement('div');
+    wrapper.className = 'app';
+    wrapper.id = `panel_${app.id}`;
+    wrapper.innerHTML = buildAppHtml(app, startVal, days, opening);
+    container.appendChild(wrapper);
+
+    attachPanelListeners(app.id);
+    updateAppAll(app.id);
+
+    const closing = getClosingValues(app.id);
+    opening = {
+      Rice: closing.Rice || 0,
+      Eggs: closing.Eggs || 0,
+      Chikki: closing.Chikki || 0,
+      Ragi: closing.Ragi || 0,
+      Jaggery: closing.Jaggery || 0
+    };
+  }
+  renderReceivedList();
+}
+/* expose for wrapper calls */
+window.generateAllApplicationsImpl = generateAllApplicationsOriginal;
+window.generateAllApplicationsOriginal = generateAllApplicationsOriginal;
+
+/* initial binding for Generate All button (ensure correct function used) */
+document.getElementById('generateAllBtn').addEventListener('click', ()=> window.generateAllApplicationsOriginal());
+
+</script>
+</body>
+</html>
